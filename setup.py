@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='BabylonSTS',
+    py_modules=["BabylonSTS"],
     version='0.1.0',
     description='A library for audio processing with speech recognition and translation',
     author='Artur Rieznik',
@@ -25,4 +26,6 @@ setup(
         'Operating System :: OS Independent',
     ],
     python_requires='>=3.6',
+    url="https://github.com/Artuar/babylon_sts",
+    include_package_data=True,
 )
