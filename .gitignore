@@ -1,4 +1,4 @@
 venv/
 /.idea/
 /local_model_*/
-!/babylon_sts.iml
+/babylon_sts.iml
