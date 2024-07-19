@@ -1,0 +1,10 @@
+numpy
+whisper_timestamped
+torch
+pydub
+transformers
+speechrecognition
+soundfile
+sentencepiece
+omegaconf
+sacremoses
