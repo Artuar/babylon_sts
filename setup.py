@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='babylon_sts',
+    name='BabylonSTS',
     version='0.1.0',
     description='A library for audio processing with speech recognition and translation',
     author='Artur Rieznik',
