@@ -14,12 +14,15 @@ setup(
         'pydub',
         'transformers',
         'speechrecognition',
-        'soundfile'
+        'soundfile',
+        'sentencepiece',
+        'omegaconf',
+        'sacremoses'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.6',
 )
