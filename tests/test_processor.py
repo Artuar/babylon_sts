@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
 import numpy as np
-from audio_processor.processor import AudioProcessor
+from babylon_sts.processor import AudioProcessor
 import torch
 
 class TestAudioProcessor(unittest.TestCase):

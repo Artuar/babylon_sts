@@ -1,4 +1,4 @@
 include README.md
 include LICENSE
-recursive-include audio_processor *
+recursive-include babylon_sts *
 recursive-include tests *
