@@ -81,7 +81,7 @@ class AudioProcessor:
         self.audio_model = whisper.load_model(model_name)
         self.tokenizer, self.translation_model = load_or_download_translation_model(language)
         self.tts_model, self.example_text = load_silero_model(language)
-        self.tts_model.to(torch.device('cpu'))
+        self.tts_model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
     def translate_text(self, text: str) -> str:
         """
