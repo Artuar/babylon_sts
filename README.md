@@ -14,7 +14,7 @@ pip install git+https://github.com/Artuar/babylon_sts.git
 
 Here is an example of how to process a local audio file, translate its content, and save the result to a new file:
 
-```
+```python
 import numpy as np
 import soundfile as sf
 from datetime import datetime
