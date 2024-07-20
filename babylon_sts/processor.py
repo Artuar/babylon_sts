@@ -65,7 +65,7 @@ def load_silero_model(language: str) -> torch.nn.Module:
 
 
 class AudioProcessor:
-    def __init__(self, language: str, model_name: str, speaker: Optional[str], sample_rate: int = 24000):
+    def __init__(self, language: str, model_name: str, speaker: Optional[str] = None, sample_rate: int = 24000):
         """
         Initialize the AudioProcessor with the specified language, Whisper model, and sample rate.
 
