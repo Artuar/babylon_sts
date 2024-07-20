@@ -37,20 +37,16 @@ lang_settings = {
         'translation_key': 'en',
         'speaker': 'v3_en',
         'speaker_name': 'en_0'
+    },
+    'hi': {
+        'translation_key': 'hi',
+        'speaker': 'v4_indic',
+        'speaker_name': 'hindi_male'
     }
 }
 
 
 def load_or_download_translation_model(language: str) -> Tuple[MarianTokenizer, MarianMTModel]:
-    """
-    Load or download the translation model for the specified language.
-
-    Args:
-        language (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es'.
-
-    Returns:
-        Tuple[MarianTokenizer, MarianMTModel]: The tokenizer and translation model.
-    """
     model_name = f"Helsinki-NLP/opus-mt-en-{lang_settings[language]['translation_key']}"
     local_dir = f"local_model_{language}"
     if os.path.exists(local_dir):
@@ -65,30 +61,23 @@ def load_or_download_translation_model(language: str) -> Tuple[MarianTokenizer, 
 
 
 def load_silero_model(language: str) -> torch.nn.Module:
-    """
-    Load the Silero TTS model for the specified language.
-
-    Args:
-        language (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es'.
-
-    Returns:
-        torch.nn.Module: The TTS model.
-    """
     return torch.hub.load(repo_or_dir='snakers4/silero-models', model='silero_tts', language=language, speaker=lang_settings[language]['speaker'])
 
 
 class AudioProcessor:
-    def __init__(self, language: str, model_name: str, sample_rate: int = 24000):
+    def __init__(self, language: str, model_name: str, speaker: Optional[str], sample_rate: int = 24000):
         """
         Initialize the AudioProcessor with the specified language, Whisper model, and sample rate.
 
         Args:
-            language (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es'.
+            language (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
             model_name (str): The Whisper model to use. Possible values: 'tiny', 'base', 'small', 'medium', 'large'.
             sample_rate (int): The sample rate for audio processing.
+            speaker (Optional[str]): The name of speaker for speech synthesize.
         """
         self.language = language
         self.sample_rate = sample_rate
+        self.speaker_name = speaker or lang_settings[language]['speaker_name']
         self.audio_model = whisper.load_model(model_name)
         self.tokenizer, self.translation_model = load_or_download_translation_model(language)
         self.tts_model, self.example_text = load_silero_model(language)
@@ -119,7 +108,7 @@ class AudioProcessor:
         Returns:
             np.ndarray: The synthesized speech audio.
         """
-        audio = self.tts_model.apply_tts(text=text, sample_rate=self.sample_rate, speaker=lang_settings[self.language]['speaker_name'])
+        audio = self.tts_model.apply_tts(text=text, sample_rate=self.sample_rate, speaker=self.speaker_name)
         return audio
 
     def recognize_speech(self, audio_data: bytes) -> List[Dict[str, str]]:

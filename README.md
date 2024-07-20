@@ -8,6 +8,10 @@ A library for audio processing with speech recognition and translation.
 pip install git+https://github.com/Artuar/babylon_sts.git
 ```
 
+## Usage examples
+
+Full speakers list here https://github.com/snakers4/silero-models?tab=readme-ov-file#models-and-speakers
+
 ## Install requirements
 
 ```bash
