@@ -23,7 +23,7 @@ import soundfile as sf
 from datetime import datetime
 from audio_processor.processor import AudioProcessor
 
-def process_local_audio(input_file: str, output_file: str, language: str = 'ua', model_name: str = 'small', sample_rate: int = 24000):
+def process_local_audio(input_file: str, output_file: str, language: str = 'ua', model_name: str = 'medium', sample_rate: int = 24000):
     # Create an instance of AudioProcessor with the required parameters
     audio_processor = AudioProcessor(language=language, model_name=model_name, sample_rate=sample_rate)
 

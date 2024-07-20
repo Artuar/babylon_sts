@@ -124,7 +124,7 @@ class AudioProcessor:
         audio_segment = AudioSegment(
             data=audio_data,
             sample_width=2,
-            frame_rate=16000,
+            frame_rate=self.sample_rate,
             channels=1
         )
         audio_segment = audio_segment.normalize()
