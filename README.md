@@ -15,37 +15,42 @@ pip install git+https://github.com/Artuar/babylon_sts.git
 Here is an example of how to process a local audio file, translate its content, and save the result to a new file:
 
 ```
-python
-Copy code
-import os
 import numpy as np
 import soundfile as sf
 from datetime import datetime
-from audio_processor.processor import AudioProcessor
+from pydub import AudioSegment
+from babylon_sts import AudioProcessor
 
-def process_local_audio(input_file: str, output_file: str, language: str = 'ua', model_name: str = 'medium', sample_rate: int = 24000):
-    # Create an instance of AudioProcessor with the required parameters
+def process_local_audio(input_file: str, output_file: str, language: str = 'ru', model_name: str = 'small', sample_rate: int = 24000):
+    # Using pydub to read the MP3 file
+    audio_segment = AudioSegment.from_file(input_file)
+
+    # Converting audio to a format supported for further processing
+    audio_segment = audio_segment.set_frame_rate(sample_rate).set_channels(1)
+    audio_data = np.array(audio_segment.get_array_of_samples())
+    audio_data = audio_data.tobytes()  # Converting data to bytes
+
+    # Creating an instance of AudioProcessor with the necessary parameters
     audio_processor = AudioProcessor(language=language, model_name=model_name, sample_rate=sample_rate)
 
-    ## Read the audio file
-    audio_data, file_sample_rate = sf.read(input_file, dtype='int16')
-    audio_data = audio_data.T.tobytes()  # Convert data to bytes
-    
-    # Current time as timestamp for processing
+    # Current time as a timestamp for processing
     timestamp = datetime.utcnow()
-    
-    # Process the audio data
-    final_audio, log_data = audio_processor.process_audio(timestamp, audio_data)
-    
-    # Save the processed audio to a new file
-    sf.write(output_file, final_audio, sample_rate)
 
-# Call the function to process a local file
-process_local_audio('input_audio.wav', 'translated_audio.wav')
+    try:
+        # Processing the audio data
+        final_audio, log_data = audio_processor.process_audio(timestamp, audio_data)
+
+        # Saving the processed audio to a new file
+        sf.write(output_file, final_audio, sample_rate)
+    except ValueError as e:
+        print(f"Error during synthesis: {e}")
+
+# Calling the function to process the local file
+process_local_audio('audio/original_audio.mp3', 'audio/translated_audio.wav')
 
 ```
 
-### Args:
+### AudioProcessor args:
 - language (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
 - model_name (str): The Whisper model to use. Possible values: 'tiny', 'base', 'small', 'medium', 'large'.
 - sample_rate (int): The sample rate for audio processing.
