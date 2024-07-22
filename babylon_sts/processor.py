@@ -46,18 +46,21 @@ lang_settings = {
 }
 
 
-def load_or_download_translation_model(language: str) -> Tuple[MarianTokenizer, MarianMTModel]:
-    model_name = f"Helsinki-NLP/opus-mt-en-{lang_settings[language]['translation_key']}"
-    local_dir = f"local_model_{language}"
-    if os.path.exists(local_dir):
-        tokenizer = MarianTokenizer.from_pretrained(local_dir)
-        translation_model = MarianMTModel.from_pretrained(local_dir)
-    else:
-        tokenizer = MarianTokenizer.from_pretrained(model_name)
-        translation_model = MarianMTModel.from_pretrained(model_name)
-        tokenizer.save_pretrained(local_dir)
-        translation_model.save_pretrained(local_dir)
-    return tokenizer, translation_model
+def load_or_download_translation_model(language_to: str, language_from: str) -> Tuple[MarianTokenizer, MarianMTModel]:
+    model_name = f"Helsinki-NLP/opus-mt-{lang_settings[language_from]['translation_key']}-{lang_settings[language_to]['translation_key']}"
+    local_dir = f"local_model_{language_to}_{language_from}"
+    try:
+        if os.path.exists(local_dir):
+            tokenizer = MarianTokenizer.from_pretrained(local_dir)
+            translation_model = MarianMTModel.from_pretrained(local_dir)
+        else:
+            tokenizer = MarianTokenizer.from_pretrained(model_name)
+            translation_model = MarianMTModel.from_pretrained(model_name)
+            tokenizer.save_pretrained(local_dir)
+            translation_model.save_pretrained(local_dir)
+        return tokenizer, translation_model
+    except Exception as e:
+        raise ValueError(f"Error loading translation model for {language_from} to {language_to}: {e}")
 
 
 def load_silero_model(language: str) -> torch.nn.Module:
@@ -65,22 +68,24 @@ def load_silero_model(language: str) -> torch.nn.Module:
 
 
 class AudioProcessor:
-    def __init__(self, language: str, model_name: str, speaker: Optional[str] = None, sample_rate: int = 24000):
+    def __init__(self, language_to: str, language_from: str, model_name: str, speaker: Optional[str] = None, sample_rate: int = 24000):
         """
         Initialize the AudioProcessor with the specified language, Whisper model, and sample rate.
 
         Args:
-            language (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
+            language_to (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
+            language_from (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
             model_name (str): The Whisper model to use. Possible values: 'tiny', 'base', 'small', 'medium', 'large'.
             sample_rate (int): The sample rate for audio processing.
             speaker (Optional[str]): The name of speaker for speech synthesize.
         """
-        self.language = language
+        self.language_to = language_to
+        self.language_from = language_from
         self.sample_rate = sample_rate
-        self.speaker_name = speaker or lang_settings[language]['speaker_name']
+        self.speaker_name = speaker or lang_settings[language_to]['speaker_name']
         self.audio_model = whisper.load_model(model_name)
-        self.tokenizer, self.translation_model = load_or_download_translation_model(language)
-        self.tts_model, self.example_text = load_silero_model(language)
+        self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from)
+        self.tts_model = load_silero_model(language_to)
         self.tts_model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
     def translate_text(self, text: str) -> str:
