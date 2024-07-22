@@ -48,7 +48,7 @@ lang_settings = {
 
 def load_or_download_translation_model(language_to: str, language_from: str) -> Tuple[MarianTokenizer, MarianMTModel]:
     model_name = f"Helsinki-NLP/opus-mt-{lang_settings[language_from]['translation_key']}-{lang_settings[language_to]['translation_key']}"
-    local_dir = f"local_model_{language_to}_{language_from}"
+    local_dir = f"local_model_{language_from}_{language_to}"
     try:
         if os.path.exists(local_dir):
             tokenizer = MarianTokenizer.from_pretrained(local_dir)
@@ -85,7 +85,7 @@ class AudioProcessor:
         self.speaker_name = speaker or lang_settings[language_to]['speaker_name']
         self.audio_model = whisper.load_model(model_name)
         self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from)
-        self.tts_model = load_silero_model(language_to)
+        self.tts_model, self.example_text = load_silero_model(language_to)
         self.tts_model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
     def translate_text(self, text: str) -> str:
