@@ -21,7 +21,7 @@ from datetime import datetime
 from pydub import AudioSegment
 from babylon_sts import AudioProcessor
 
-def process_local_audio(input_file: str, output_file: str, language: str = 'ru', model_name: str = 'small', sample_rate: int = 24000):
+def process_local_audio(input_file: str, output_file: str, language_to: str = 'ru', language_from: str = 'en', model_name: str = 'small', sample_rate: int = 24000):
     # Using pydub to read the MP3 file
     audio_segment = AudioSegment.from_file(input_file)
 
@@ -31,7 +31,7 @@ def process_local_audio(input_file: str, output_file: str, language: str = 'ru',
     audio_data = audio_data.tobytes()  # Converting data to bytes
 
     # Creating an instance of AudioProcessor with the necessary parameters
-    audio_processor = AudioProcessor(language=language, model_name=model_name, sample_rate=sample_rate)
+    audio_processor = AudioProcessor(language_to=language_to, language_from=language_from, model_name=model_name, sample_rate=sample_rate)
 
     # Current time as a timestamp for processing
     timestamp = datetime.utcnow()
@@ -51,7 +51,8 @@ process_local_audio('audio/original_audio.mp3', 'audio/translated_audio.wav')
 ```
 
 ### AudioProcessor args:
-- language (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
+- language_to (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
+- language_from (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
 - model_name (str): The Whisper model to use. Possible values: 'tiny', 'base', 'small', 'medium', 'large'.
 - sample_rate (int): The sample rate for audio processing.
 - speaker (Optional[str]): The name of speaker for speech synthesize. Full speakers list here https://github.com/snakers4/silero-models?tab=readme-ov-file#models-and-speakers
