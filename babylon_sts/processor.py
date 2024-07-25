@@ -113,8 +113,12 @@ class AudioProcessor:
         Returns:
             np.ndarray: The synthesized speech audio.
         """
-        audio = self.tts_model.apply_tts(text=text, sample_rate=self.sample_rate, speaker=self.speaker_name)
-        return audio
+        try:
+            audio = self.tts_model.apply_tts(text=text, sample_rate=self.sample_rate, speaker=self.speaker_name)
+            return audio
+        except ValueError as e:
+            print(f"Synthesis error for text '{text}': {e}")
+            return np.array([])
 
     def recognize_speech(self, audio_data: bytes) -> List[Dict[str, str]]:
         """
@@ -136,7 +140,12 @@ class AudioProcessor:
         samples = np.array(audio_segment.get_array_of_samples())
         audio_np = samples.astype(np.float32) / 32768.0
 
-        result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available())
+        try:
+            result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available())
+        except RuntimeError as e:
+            print(f"Recognition error: {e}")
+            return []
+
         return result['segments']
 
     def process_audio(self, timestamp: datetime, audio_data: bytes) -> Tuple[np.ndarray, Optional[Dict[str, str]]]:
