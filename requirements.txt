@@ -3,3 +3,7 @@ whisper_timestamped==1.15.4
 torch==2.3.1
 pydub==0.25.1
 transformers==4.42.4
+soundfile==0.12.1
+sentencepiece==0.2.0
+omegaconf==2.3.0
+sacremoses==0.1.1
