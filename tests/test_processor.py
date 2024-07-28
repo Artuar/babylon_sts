@@ -8,7 +8,7 @@ class TestAudioProcessor(unittest.TestCase):
 
     def setUp(self):
         # Initialize the AudioProcessor with a test language and model
-        self.processor = AudioProcessor(language='ua', model_name='tiny', sample_rate=24000)
+        self.processor = AudioProcessor(language_to='ua', language_from='en', model_name='tiny', sample_rate=24000)
         self.test_audio_data = self.generate_test_audio_data()
 
     def generate_test_audio_data(self):
