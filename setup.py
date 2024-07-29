@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='babylon_sts',
     py_modules=["babylon_sts"],
-    version='0.1.14',
+    version='0.1.15',
     description='A library for audio processing with speech recognition and translation',
     author='Artur Rieznik',
     author_email='artuar1990@gmail.com',
@@ -16,7 +16,7 @@ setup(
         'soundfile',
         'sentencepiece',
         'omegaconf',
-        'sacremoses'
+        'sacremoses',
         'transformers'
     ],
     classifiers=[
