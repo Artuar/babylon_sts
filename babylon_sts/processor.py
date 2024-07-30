@@ -95,7 +95,6 @@ class AudioProcessor:
         self.audio_model.to(self.device)
         self.translation_model.to(self.device)
         self.tts_model.to(self.device)
-        self.tokenizer.to(self.device)
 
     def translate_text(self, text: str) -> str:
         """
@@ -107,7 +106,7 @@ class AudioProcessor:
         Returns:
             str: The translated text.
         """
-        inputs = self.tokenizer(text, return_tensors="pt", padding=True)
+        inputs = self.tokenizer(text, return_tensors="pt", padding=True).to(self.device)
         translated = self.translation_model.generate(**inputs)
         translated_text = self.tokenizer.batch_decode(translated, skip_special_tokens=True)
         return translated_text[0]
