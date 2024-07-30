@@ -9,3 +9,4 @@ soundfile==0.12.1
 sentencepiece==0.2.0
 omegaconf==2.3.0
 sacremoses==0.1.1
+device==0.1

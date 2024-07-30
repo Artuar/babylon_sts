@@ -1,4 +1,6 @@
 import os
+
+import device as device_type
 import numpy as np
 import whisper_timestamped as whisper
 import torch
@@ -46,7 +48,7 @@ lang_settings = {
 }
 
 
-def load_or_download_translation_model(language_to: str, language_from: str, device: str) -> Tuple[MarianTokenizer, MarianMTModel]:
+def load_or_download_translation_model(language_to: str, language_from: str) -> Tuple[MarianTokenizer, MarianMTModel]:
     model_name = f"Helsinki-NLP/opus-mt-{lang_settings[language_from]['translation_key']}-{lang_settings[language_to]['translation_key']}"
     local_dir = f"local_model_{language_from}_{language_to}"
     try:
@@ -58,20 +60,14 @@ def load_or_download_translation_model(language_to: str, language_from: str, dev
             translation_model = MarianMTModel.from_pretrained(model_name)
             tokenizer.save_pretrained(local_dir)
             translation_model.save_pretrained(local_dir)
-
-        if device is 'cuda':
-            translation_model.to('cuda')
-
         return tokenizer, translation_model
     except Exception as e:
         raise ValueError(f"Error loading translation model for {language_from} to {language_to}: {e}")
 
 
-def load_silero_model(language: str, device: str) -> torch.nn.Module:
-    model = torch.hub.load(repo_or_dir='snakers4/silero-models', model='silero_tts', language=language, speaker=lang_settings[language]['speaker'])
-    if device is 'cuda':
-        model.to('cuda')
-    return model
+def load_silero_model(language: str) -> torch.nn.Module:
+    return torch.hub.load(repo_or_dir='snakers4/silero-models', model='silero_tts', language=language, speaker=lang_settings[language]['speaker'])
+
 
 
 class AudioProcessor:
@@ -90,14 +86,17 @@ class AudioProcessor:
         self.language_from = language_from
         self.sample_rate = sample_rate
         self.speaker_name = speaker or lang_settings[language_to]['speaker_name']
-        self.audio_model = whisper.load_model(model_name)
-
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f'Using device: {self.device}')
 
-        self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from, self.device)
-        self.tts_model, self.example_text = load_silero_model(language_to, self.device)
-        self.tts_model.to(torch.device(self.device))
+        self.audio_model = whisper.load_model(model_name)
+        self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from)
+        self.tts_model, self.example_text = load_silero_model(language_to)
+
+        self.audio_model.to(self.device)
+        self.translation_model.to(self.device)
+        self.tts_model.to(self.device)
+        self.tokenizer.to(self.device)
 
     def translate_text(self, text: str) -> str:
         """
@@ -110,10 +109,6 @@ class AudioProcessor:
             str: The translated text.
         """
         inputs = self.tokenizer(text, return_tensors="pt", padding=True)
-
-        if self.device is 'cuda':
-            inputs = inputs.to('cuda')
-
         translated = self.translation_model.generate(**inputs)
         translated_text = self.tokenizer.batch_decode(translated, skip_special_tokens=True)
         return translated_text[0]
