@@ -1,6 +1,5 @@
 import os
 
-import device as device_type
 import numpy as np
 import whisper_timestamped as whisper
 import torch
