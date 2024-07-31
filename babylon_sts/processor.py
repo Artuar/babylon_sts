@@ -204,7 +204,7 @@ class AudioProcessor:
             "original_text": segments[-1]['text'],
             "translated_text": translated_segments[-1]['text'],
             "synthesis_delay": synthesis_delay,
-            "segments": segments
+            "recognition_segments": segments
         }
 
         return final_audio, log_data
