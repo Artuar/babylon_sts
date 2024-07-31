@@ -68,7 +68,6 @@ def load_silero_model(language: str) -> torch.nn.Module:
     return torch.hub.load(repo_or_dir='snakers4/silero-models', model='silero_tts', language=language, speaker=lang_settings[language]['speaker'])
 
 
-
 class AudioProcessor:
     def __init__(self, language_to: str, language_from: str, model_name: str, speaker: Optional[str] = None, sample_rate: int = 24000):
         """
@@ -106,10 +105,13 @@ class AudioProcessor:
         Returns:
             str: The translated text.
         """
-        inputs = self.tokenizer(text, return_tensors="pt", padding=True).to(self.device)
-        translated = self.translation_model.generate(**inputs)
-        translated_text = self.tokenizer.batch_decode(translated, skip_special_tokens=True)
-        return translated_text[0]
+        try:
+            inputs = self.tokenizer(text, return_tensors="pt", padding=True).to(self.device)
+            translated = self.translation_model.generate(**inputs)
+            translated_text = self.tokenizer.batch_decode(translated, skip_special_tokens=True)
+            return translated_text[0]
+        except Exception as e:
+            raise ValueError(f"Translated error '{text}': {e}")
 
     def synthesize_speech(self, text: str) -> np.ndarray:
         """
@@ -124,9 +126,8 @@ class AudioProcessor:
         try:
             audio = self.tts_model.apply_tts(text=text, sample_rate=self.sample_rate, speaker=self.speaker_name)
             return audio
-        except ValueError as e:
-            print(f"Synthesis error for text '{text}': {e}")
-            return np.array([])
+        except Exception as e:
+            raise ValueError(f"Synthesis error for text '{text}': {e}")
 
     def recognize_speech(self, audio_data: bytes) -> List[Dict[str, str]]:
         """
@@ -150,9 +151,8 @@ class AudioProcessor:
 
         try:
             result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available())
-        except RuntimeError as e:
-            print(f"Recognition error: {e}")
-            return []
+        except Exception as e:
+            raise ValueError(f"Recognition error: {e}")
 
         return result['segments']
 
@@ -187,12 +187,14 @@ class AudioProcessor:
             })
 
         final_audio = np.array([])
-        for segment in translated_segments:
-            synthesized_segment = self.synthesize_speech(segment['text'])
-            silence_duration = int(segment['start'] * self.sample_rate) - len(final_audio)
-            if silence_duration > 0:
-                final_audio = np.pad(final_audio, (0, silence_duration), 'constant')
-            final_audio = np.concatenate((final_audio, synthesized_segment), axis=None)
+        for translated_segment in translated_segments:
+            translated_text = translated_segment['text']
+            if translated_text:
+                synthesized_segment = self.synthesize_speech(translated_text)
+                silence_duration = int(translated_segment['start'] * self.sample_rate) - len(final_audio)
+                if silence_duration > 0:
+                    final_audio = np.pad(final_audio, (0, silence_duration), 'constant')
+                final_audio = np.concatenate((final_audio, synthesized_segment), axis=None)
 
         synthesis_timestamp = datetime.utcnow()
         synthesis_delay = (synthesis_timestamp - timestamp).total_seconds()
