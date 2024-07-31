@@ -216,10 +216,13 @@ class AudioProcessor:
 
         synthesis_delay = (datetime.utcnow() - timestamp).total_seconds()
 
+        original_text = " ".join([segment['text'] for segment in recognized_segments])
+        translated_text = " ".join([segment['text'] for segment in translated_segments])
+
         log_data = {
             "timestamp": timestamp,
-            "original_text": recognized_segments[-1]['text'],
-            "translated_text": translated_segments[-1]['text'],
+            "original_text": original_text,
+            "translated_text": translated_text,
             "synthesis_delay": synthesis_delay,
             "recognize_result": recognized_result
         }
