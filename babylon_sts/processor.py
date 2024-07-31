@@ -203,7 +203,8 @@ class AudioProcessor:
             "timestamp": timestamp,
             "original_text": segments[-1]['text'],
             "translated_text": translated_segments[-1]['text'],
-            "synthesis_delay": synthesis_delay
+            "synthesis_delay": synthesis_delay,
+            "segments": segments
         }
 
         return final_audio, log_data
