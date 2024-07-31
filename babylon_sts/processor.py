@@ -6,7 +6,14 @@ import torch
 from pydub import AudioSegment
 from datetime import datetime
 from transformers import MarianMTModel, MarianTokenizer
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, TypedDict
+
+
+class RecognizeResult(TypedDict):
+    text: str
+    segments: List[Dict[str, str]]
+    language: str
+
 
 lang_settings = {
     'ua': {
@@ -129,7 +136,7 @@ class AudioProcessor:
         except Exception as e:
             raise ValueError(f"Synthesis error for text '{text}': {e}")
 
-    def recognize_speech(self, audio_data: bytes) -> Dict[str, List[Dict[str, str]]]:
+    def recognize_speech(self, audio_data: bytes) -> RecognizeResult:
         """
         Recognize speech from the given audio data.
 
@@ -137,7 +144,7 @@ class AudioProcessor:
             audio_data (bytes): The audio data to recognize.
 
         Returns:
-            List[Dict[str, str]]: The recognized segments with text.
+            RecognizeResult: The recognized segments with text.
         """
         audio_segment = AudioSegment(
             data=audio_data,
@@ -167,19 +174,22 @@ class AudioProcessor:
         Returns:
             Tuple[np.ndarray, Optional[Dict[str, str]]]: The final audio and log data.
         """
-        recognize_result = self.recognize_speech(audio_data)
-        segments = recognize_result['segments']
+        recognized_result = self.recognize_speech(audio_data)
+        recognized_segments = recognized_result['segments']
+        recognized_language = recognized_result['language']
+        synthesis_delay = (datetime.utcnow() - timestamp).total_seconds()
 
-        if not segments:
+        if not recognized_segments or recognized_language == self.language_to:
             return np.array(audio_data), {
                 "timestamp": timestamp,
-                "original_text": '',
-                "translated_text": '',
-                "synthesis_delay": 0
+                "original_text": recognized_result['text'],
+                "translated_text": recognized_result['text'],
+                "synthesis_delay": synthesis_delay,
+                "recognize_result": recognized_result
             }
 
         translated_segments = []
-        for segment in segments:
+        for segment in recognized_segments:
             translated_text = self.translate_text(segment['text'])
             translated_segments.append({
                 'start': segment['start'],
@@ -197,15 +207,14 @@ class AudioProcessor:
                     final_audio = np.pad(final_audio, (0, silence_duration), 'constant')
                 final_audio = np.concatenate((final_audio, synthesized_segment), axis=None)
 
-        synthesis_timestamp = datetime.utcnow()
-        synthesis_delay = (synthesis_timestamp - timestamp).total_seconds()
+        synthesis_delay = (datetime.utcnow() - timestamp).total_seconds()
 
         log_data = {
             "timestamp": timestamp,
-            "original_text": segments[-1]['text'],
+            "original_text": recognized_segments[-1]['text'],
             "translated_text": translated_segments[-1]['text'],
             "synthesis_delay": synthesis_delay,
-            "recognize_result": recognize_result
+            "recognize_result": recognized_result
         }
 
         return final_audio, log_data
