@@ -129,7 +129,7 @@ class AudioProcessor:
         except Exception as e:
             raise ValueError(f"Synthesis error for text '{text}': {e}")
 
-    def recognize_speech(self, audio_data: bytes) -> List[Dict[str, str]]:
+    def recognize_speech(self, audio_data: bytes) -> Dict[str, List[Dict[str, str]]]:
         """
         Recognize speech from the given audio data.
 
@@ -154,7 +154,7 @@ class AudioProcessor:
         except Exception as e:
             raise ValueError(f"Recognition error: {e}")
 
-        return result['segments']
+        return result
 
     def process_audio(self, timestamp: datetime, audio_data: bytes) -> Tuple[np.ndarray, Optional[Dict[str, str]]]:
         """
@@ -167,7 +167,8 @@ class AudioProcessor:
         Returns:
             Tuple[np.ndarray, Optional[Dict[str, str]]]: The final audio and log data.
         """
-        segments = self.recognize_speech(audio_data)
+        recognize_result = self.recognize_speech(audio_data)
+        segments = recognize_result['segments']
 
         if not segments:
             return np.array(audio_data), {
@@ -204,7 +205,7 @@ class AudioProcessor:
             "original_text": segments[-1]['text'],
             "translated_text": translated_segments[-1]['text'],
             "synthesis_delay": synthesis_delay,
-            "recognition_segments": segments
+            "recognize_result": recognize_result
         }
 
         return final_audio, log_data
