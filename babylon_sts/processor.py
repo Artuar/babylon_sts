@@ -193,7 +193,7 @@ class AudioProcessor:
             no_speech_prob = segment['no_speech_prob']
 
             # Filter segments with low recognition probability
-            if int(no_speech_prob) > 0.5:
+            if int(no_speech_prob) < 0.5:
                 translated_text = self.translate_text(segment['text'])
             else:
                 translated_text = ""
