@@ -4,7 +4,9 @@ setup(
     name='babylon_sts',
     py_modules=["babylon_sts"],
     version='0.1.22',
-    description='A library for audio processing with speech recognition and translation',
+    description='A powerful library for audio processing '
+                'with advanced features for speech recognition, '
+                'text translation, and speech synthesis.',
     author='Artur Rieznik',
     author_email='artuar1990@gmail.com',
     packages=find_packages(),

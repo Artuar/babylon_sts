@@ -1,6 +1,15 @@
 # Babylon STS
 
-A library for audio processing with speech recognition and translation.
+### A powerful library for audio processing with advanced features for speech recognition, text translation, and speech synthesis.
+
+This robust library offers a wide range of capabilities for working with audio, including speech recognition, text translation, and speech synthesis. It is perfect for developers looking to integrate advanced audio features into their applications.
+
+Key Features:
+- Speech Recognition: Accurate and fast conversion of voice to text for various languages.
+- Text Translation: Automatic translation of recognized text into other languages, making interaction more accessible.
+- Speech Synthesis: Generation of natural-sounding speech from text, enabling the creation of interactive voice applications.
+
+This library is designed to provide high-quality audio processing tools, offering everything you need to develop innovative solutions in the field of speech technology.
 
 ## Installation
 
