@@ -8,8 +8,6 @@ from pydub import AudioSegment
 from datetime import datetime
 from transformers import MarianMTModel, MarianTokenizer
 from typing import List, Dict, Tuple, Optional, TypedDict
-from demucs import pretrained
-from demucs.apply import apply_model
 import soundfile as sf
 
 lang_settings = {
@@ -50,12 +48,10 @@ lang_settings = {
     }
 }
 
-
 class RecognizeResult(TypedDict):
     text: str
     segments: List[Dict[str, str]]
     language: str
-
 
 def load_or_download_translation_model(language_to: str, language_from: str) -> Tuple[MarianTokenizer, MarianMTModel]:
     model_name = f"Helsinki-NLP/opus-mt-{lang_settings[language_from]['translation_key']}-{lang_settings[language_to]['translation_key']}"
@@ -73,10 +69,8 @@ def load_or_download_translation_model(language_to: str, language_from: str) -> 
     except Exception as e:
         raise ValueError(f"Error loading translation model for {language_from} to {language_to}: {e}")
 
-
 def load_silero_model(language: str) -> torch.nn.Module:
     return torch.hub.load(repo_or_dir='snakers4/silero-models', model='silero_tts', language=language, speaker=lang_settings[language]['speaker'])
-
 
 class AudioProcessor:
     def __init__(self, language_to: str, language_from: str, model_name: str, speaker: Optional[str] = None, sample_rate: int = 24000):
@@ -100,12 +94,10 @@ class AudioProcessor:
         self.audio_model = whisper.load_model(model_name)
         self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from)
         self.tts_model, self.example_text = load_silero_model(language_to)
-        self.demucs_model = pretrained.get_model('htdemucs')
 
         self.audio_model.to(self.device)
         self.translation_model.to(self.device)
         self.tts_model.to(self.device)
-        self.demucs_model.to(self.device)
 
     def normalize_audio(self, audio_data: bytes) -> np.ndarray:
         """
@@ -127,39 +119,6 @@ class AudioProcessor:
         samples = np.array(audio_segment.get_array_of_samples())
         audio_np = samples.astype(np.float32) / 32768.0
         return audio_np
-
-    def separate_voice_and_background(self, audio_np: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Separate voice and background sounds using Demucs.
-
-        Args:
-            audio_np (np.ndarray): The normalized audio data to separate.
-
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: Separated voice and background audio data.
-        """
-        try:
-            # Save audio to a temporary file
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmpfile:
-                sf.write(tmpfile.name, audio_np, self.sample_rate)
-                tmpfile.close()
-
-                # Load the pre-trained Demucs model
-                model = pretrained.get_model('htdemucs')
-                model.to(self.device)
-
-                # Separate the audio
-                wav = torch.tensor(audio_np).unsqueeze(0).to(self.device)
-                sources = apply_model(model, wav)
-
-                # Extract voice and background
-                voice = sources[0].cpu().numpy()
-                background = sources[1].cpu().numpy()
-
-                return voice, background
-
-        except Exception as e:
-            raise ValueError(f"Separate voice and background error: {e}")
 
     def translate_text(self, text: str) -> str:
         """
@@ -225,7 +184,6 @@ class AudioProcessor:
             Tuple[np.ndarray, Optional[Dict[str, str]]]: The final audio and log data.
         """
         audio_np = self.normalize_audio(audio_data)
-        # voice_audio, background_audio = self.separate_voice_and_background(audio_np)
 
         recognized_result = self.recognize_speech(audio_np)
         recognized_segments = recognized_result['segments']
