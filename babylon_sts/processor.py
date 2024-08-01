@@ -1,5 +1,4 @@
 import os
-from io import BytesIO
 
 import numpy as np
 import whisper_timestamped as whisper
@@ -10,51 +9,14 @@ from transformers import MarianMTModel, MarianTokenizer
 from typing import List, Dict, Tuple, Optional, TypedDict
 from demucs import pretrained
 from demucs.apply import apply_model
-import soundfile as sf
+
+import lang_settings
+
 
 class RecognizeResult(TypedDict):
     text: str
     segments: List[Dict[str, str]]
     language: str
-
-
-lang_settings = {
-    'ua': {
-        'translation_key': 'uk',
-        'speaker': 'v4_ua',
-        'speaker_name': 'mykyta'
-    },
-    'ru': {
-        'translation_key': 'ru',
-        'speaker': 'v4_ru',
-        'speaker_name': 'aidar'
-    },
-    'fr': {
-        'translation_key': 'fr',
-        'speaker': 'v3_fr',
-        'speaker_name': 'fr_0'
-    },
-    'de': {
-        'translation_key': 'de',
-        'speaker': 'v3_de',
-        'speaker_name': 'karlsson'
-    },
-    'es': {
-        'translation_key': 'es',
-        'speaker': 'v3_es',
-        'speaker_name': 'es_0'
-    },
-    'en': {
-        'translation_key': 'en',
-        'speaker': 'v3_en',
-        'speaker_name': 'en_0'
-    },
-    'hi': {
-        'translation_key': 'hi',
-        'speaker': 'v4_indic',
-        'speaker_name': 'hindi_male'
-    }
-}
 
 
 def load_or_download_translation_model(language_to: str, language_from: str) -> Tuple[MarianTokenizer, MarianMTModel]:
@@ -140,7 +102,8 @@ class AudioProcessor:
         """
         try:
             sources = apply_model(self.demucs_model, torch.tensor(audio_np).unsqueeze(0), shifts=1, split=True, overlap=0.25)
-            voice, background = sources[0][0].cpu().numpy(), sources[1][0].cpu().numpy()
+            voice = sources[0][0].cpu().numpy()  # Voice track
+            background = np.sum(sources[1:].cpu().numpy(), axis=0)  # Sum of all other tracks as background
 
             return voice, background
 
