@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 import numpy as np
 import whisper_timestamped as whisper
@@ -9,6 +10,7 @@ from transformers import MarianMTModel, MarianTokenizer
 from typing import List, Dict, Tuple, Optional, TypedDict
 from demucs import pretrained
 from demucs.apply import apply_model
+import soundfile as sf
 
 lang_settings = {
     'ua': {
@@ -137,11 +139,24 @@ class AudioProcessor:
             Tuple[np.ndarray, np.ndarray]: Separated voice and background audio data.
         """
         try:
-            sources = apply_model(self.demucs_model, torch.tensor(audio_np).unsqueeze(0), shifts=1, split=True, overlap=0.25)
-            voice = sources[0][0].cpu().numpy()  # Voice track
-            background = np.sum(sources[1:].cpu().numpy(), axis=0)  # Sum of all other tracks as background
+            # Save audio to a temporary file
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmpfile:
+                sf.write(tmpfile.name, audio_np, self.sample_rate)
+                tmpfile.close()
 
-            return voice, background
+                # Load the pre-trained Demucs model
+                model = pretrained.get_model('htdemucs')
+                model.to(self.device)
+
+                # Separate the audio
+                wav = torch.tensor(audio_np).unsqueeze(0).to(self.device)
+                sources = apply_model(model, wav)
+
+                # Extract voice and background
+                voice = sources[0].cpu().numpy()
+                background = sources[1].cpu().numpy()
+
+                return voice, background
 
         except Exception as e:
             raise ValueError(f"Separate voice and background error: {e}")
@@ -210,9 +225,9 @@ class AudioProcessor:
             Tuple[np.ndarray, Optional[Dict[str, str]]]: The final audio and log data.
         """
         audio_np = self.normalize_audio(audio_data)
-        voice_audio, background_audio = self.separate_voice_and_background(audio_np)
+        # voice_audio, background_audio = self.separate_voice_and_background(audio_np)
 
-        recognized_result = self.recognize_speech(voice_audio)
+        recognized_result = self.recognize_speech(audio_np)
         recognized_segments = recognized_result['segments']
         recognized_language = recognized_result['language']
         synthesis_delay = (datetime.utcnow() - timestamp).total_seconds()
