@@ -10,7 +10,7 @@ from typing import List, Dict, Tuple, Optional, TypedDict
 from demucs import pretrained
 from demucs.apply import apply_model
 
-import lang_settings
+from babylon_sts import lang_settings
 
 
 class RecognizeResult(TypedDict):
