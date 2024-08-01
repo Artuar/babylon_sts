@@ -157,7 +157,7 @@ class AudioProcessor:
         audio_np = samples.astype(np.float32) / 32768.0
 
         try:
-            result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available())
+            result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available(), language=self.language_from)
         except Exception as e:
             raise ValueError(f"Recognition error: {e}")
 
