@@ -138,10 +138,14 @@ class AudioProcessor:
         Returns:
             Tuple[np.ndarray, np.ndarray]: Separated voice and background audio data.
         """
-        sources = apply_model(self.demucs_model, torch.tensor(audio_np).unsqueeze(0), shifts=1, split=True, overlap=0.25)
-        voice, background = sources[0].numpy(), sources[1].numpy()
+        try:
+            sources = apply_model(self.demucs_model, torch.tensor(audio_np).unsqueeze(0), shifts=1, split=True, overlap=0.25)
+            voice, background = sources[0][0].cpu().numpy(), sources[1][0].cpu().numpy()
 
-        return voice, background
+            return voice, background
+
+        except Exception as e:
+            raise ValueError(f"Separate voice and background error: {e}")
 
     def translate_text(self, text: str) -> str:
         """
