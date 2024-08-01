@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 
 import numpy as np
 import whisper_timestamped as whisper
@@ -7,8 +8,9 @@ from pydub import AudioSegment
 from datetime import datetime
 from transformers import MarianMTModel, MarianTokenizer
 from typing import List, Dict, Tuple, Optional, TypedDict
-from demucs.pretrained import get_model
+from demucs import pretrained
 from demucs.apply import apply_model
+import soundfile as sf
 
 class RecognizeResult(TypedDict):
     text: str
@@ -98,10 +100,12 @@ class AudioProcessor:
         self.audio_model = whisper.load_model(model_name)
         self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from)
         self.tts_model, self.example_text = load_silero_model(language_to)
+        self.demucs_model = pretrained.get_model('htdemucs')
 
         self.audio_model.to(self.device)
         self.translation_model.to(self.device)
         self.tts_model.to(self.device)
+        self.demucs_model.to(self.device)
 
     def normalize_audio(self, audio_data: bytes) -> np.ndarray:
         """
@@ -134,8 +138,7 @@ class AudioProcessor:
         Returns:
             Tuple[np.ndarray, np.ndarray]: Separated voice and background audio data.
         """
-        model = get_model('demucs')
-        sources = apply_model(model, torch.tensor(audio_np), shifts=1, split=True, overlap=0.25)
+        sources = apply_model(self.demucs_model, torch.tensor(audio_np).unsqueeze(0), shifts=1, split=True, overlap=0.25)
         voice, background = sources[0].numpy(), sources[1].numpy()
 
         return voice, background
