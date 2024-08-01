@@ -10,3 +10,5 @@ sentencepiece==0.2.0
 omegaconf==2.3.0
 sacremoses==0.1.1
 device==0.1
+setuptools==60.2.0
+demucs==4.0.1

@@ -7,7 +7,8 @@ from pydub import AudioSegment
 from datetime import datetime
 from transformers import MarianMTModel, MarianTokenizer
 from typing import List, Dict, Tuple, Optional, TypedDict
-
+from demucs.pretrained import get_model
+from demucs.apply import apply_model
 
 class RecognizeResult(TypedDict):
     text: str
@@ -102,6 +103,43 @@ class AudioProcessor:
         self.translation_model.to(self.device)
         self.tts_model.to(self.device)
 
+    def normalize_audio(self, audio_data: bytes) -> np.ndarray:
+        """
+        Normalize the given audio data.
+
+        Args:
+            audio_data (bytes): The audio data to normalize.
+
+        Returns:
+            np.ndarray: The normalized audio data.
+        """
+        audio_segment = AudioSegment(
+            data=audio_data,
+            sample_width=2,
+            frame_rate=self.sample_rate,
+            channels=1
+        )
+        audio_segment = audio_segment.normalize()
+        samples = np.array(audio_segment.get_array_of_samples())
+        audio_np = samples.astype(np.float32) / 32768.0
+        return audio_np
+
+    def separate_voice_and_background(self, audio_np: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Separate voice and background sounds using Demucs.
+
+        Args:
+            audio_np (np.ndarray): The normalized audio data to separate.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: Separated voice and background audio data.
+        """
+        model = get_model('demucs')
+        sources = apply_model(model, torch.tensor(audio_np), shifts=1, split=True, overlap=0.25)
+        voice, background = sources[0].numpy(), sources[1].numpy()
+
+        return voice, background
+
     def translate_text(self, text: str) -> str:
         """
         Translate the given text to the target language.
@@ -136,26 +174,16 @@ class AudioProcessor:
         except Exception as e:
             raise ValueError(f"Synthesis error for text '{text}': {e}")
 
-    def recognize_speech(self, audio_data: bytes) -> RecognizeResult:
+    def recognize_speech(self, audio_np: np.ndarray) -> RecognizeResult:
         """
         Recognize speech from the given audio data.
 
         Args:
-            audio_data (bytes): The audio data to recognize.
+            audio_np (np.ndarray): The audio data to recognize.
 
         Returns:
             RecognizeResult: The recognized segments with text.
         """
-        audio_segment = AudioSegment(
-            data=audio_data,
-            sample_width=2,
-            frame_rate=self.sample_rate,
-            channels=1
-        )
-        audio_segment = audio_segment.normalize()
-        samples = np.array(audio_segment.get_array_of_samples())
-        audio_np = samples.astype(np.float32) / 32768.0
-
         try:
             language = lang_settings[self.language_from]['translation_key']
             result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available(), language=language)
@@ -175,13 +203,16 @@ class AudioProcessor:
         Returns:
             Tuple[np.ndarray, Optional[Dict[str, str]]]: The final audio and log data.
         """
-        recognized_result = self.recognize_speech(audio_data)
+        audio_np = self.normalize_audio(audio_data)
+        voice_audio, background_audio = self.separate_voice_and_background(audio_np)
+
+        recognized_result = self.recognize_speech(voice_audio)
         recognized_segments = recognized_result['segments']
         recognized_language = recognized_result['language']
         synthesis_delay = (datetime.utcnow() - timestamp).total_seconds()
 
         if not recognized_segments or recognized_language == self.language_to:
-            return np.array(audio_data), {
+            return audio_np, {
                 "timestamp": timestamp,
                 "original_text": recognized_result['text'],
                 "translated_text": recognized_result['text'],
