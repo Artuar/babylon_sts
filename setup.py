@@ -20,7 +20,6 @@ setup(
         'omegaconf',
         'sacremoses',
         'transformers',
-        'audio_separator'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
