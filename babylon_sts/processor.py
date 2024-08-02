@@ -130,7 +130,7 @@ class AudioProcessor:
             padded_audio_np = np.pad(audio_np, (0, padding_length), 'constant')
             return padded_audio_np
         else:
-            return audio_np[:target_length]
+            return audio_np
 
     def translate_text(self, text: str) -> str:
         """
@@ -191,7 +191,7 @@ class AudioProcessor:
         Args:
             timestamp (datetime): The timestamp of the audio data.
             audio_data (bytes): The audio data to process.
-            audio_length (int): The audio length in milliseconds.
+            audio_length (int): The audio length in seconds.
 
         Returns:
             Tuple[np.ndarray, Optional[Dict[str, str]]]: The final audio and log data.
