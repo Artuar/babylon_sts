@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='babylon_sts',
     py_modules=["babylon_sts"],
-    version='0.1.39',
+    version='0.1.40',
     description='A powerful library for audio processing '
                 'with advanced features for speech recognition, '
                 'text translation, and speech synthesis.',
@@ -19,7 +19,8 @@ setup(
         'sentencepiece',
         'omegaconf',
         'sacremoses',
-        'transformers'
+        'transformers',
+        'audio_separator'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

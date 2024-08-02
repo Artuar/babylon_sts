@@ -1,5 +1,4 @@
 import os
-import tempfile
 
 import numpy as np
 import whisper_timestamped as whisper
@@ -8,7 +7,6 @@ from pydub import AudioSegment
 from datetime import datetime
 from transformers import MarianMTModel, MarianTokenizer
 from typing import List, Dict, Tuple, Optional, TypedDict
-import soundfile as sf
 
 lang_settings = {
     'ua': {
@@ -99,7 +97,7 @@ class AudioProcessor:
         self.translation_model.to(self.device)
         self.tts_model.to(self.device)
 
-    def normalize_audio(self, audio_data: bytes) -> np.ndarray:
+    def normalize_audio(self, audio_data: bytes) -> Tuple[np.ndarray, float]:
         """
         Normalize the given audio data.
 
@@ -107,7 +105,7 @@ class AudioProcessor:
             audio_data (bytes): The audio data to normalize.
 
         Returns:
-            np.ndarray: The normalized audio data.
+            Tuple[np.ndarray, float]: The normalized audio data and length in seconds.
         """
         try:
             audio_segment = AudioSegment(
@@ -119,7 +117,7 @@ class AudioProcessor:
             audio_segment = audio_segment.normalize()
             samples = np.array(audio_segment.get_array_of_samples())
             audio_np = samples.astype(np.float32) / 32768.0
-            return audio_np
+            return audio_np, len(audio_segment) / 1000
         except Exception as e:
             raise ValueError(f"Normalize audio error: {e}")
 
@@ -184,28 +182,26 @@ class AudioProcessor:
 
         return result
 
-    def process_audio(self, timestamp: datetime, audio_data: bytes, audio_length: int) -> Tuple[np.ndarray, Optional[Dict[str, str]]]:
+    def process_audio(self, timestamp: datetime, audio_data: bytes) -> Tuple[np.ndarray, Optional[Dict[str, str]]]:
         """
         Process the audio data by recognizing speech, translating text, and synthesizing speech.
 
         Args:
             timestamp (datetime): The timestamp of the audio data.
             audio_data (bytes): The audio data to process.
-            audio_length (int): The audio length in seconds.
 
         Returns:
             Tuple[np.ndarray, Optional[Dict[str, str]]]: The final audio and log data.
         """
-        audio_np = self.normalize_audio(audio_data)
-        adjusted_audio_np = self.adjust_audio_length(audio_np, audio_length)
+        audio_np, audio_length = self.normalize_audio(audio_data)
 
-        recognized_result = self.recognize_speech(adjusted_audio_np)
+        recognized_result = self.recognize_speech(audio_np)
         recognized_segments = recognized_result['segments']
         recognized_language = recognized_result['language']
         synthesis_delay = (datetime.utcnow() - timestamp).total_seconds()
 
         if not recognized_segments or recognized_language == self.language_to:
-            return adjusted_audio_np, {
+            return audio_np, {
                 "timestamp": timestamp,
                 "original_text": recognized_result['text'],
                 "translated_text": recognized_result['text'],
