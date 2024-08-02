@@ -109,16 +109,28 @@ class AudioProcessor:
         Returns:
             np.ndarray: The normalized audio data.
         """
-        audio_segment = AudioSegment(
-            data=audio_data,
-            sample_width=2,
-            frame_rate=self.sample_rate,
-            channels=1
-        )
-        audio_segment = audio_segment.normalize()
-        samples = np.array(audio_segment.get_array_of_samples())
-        audio_np = samples.astype(np.float32) / 32768.0
-        return audio_np
+        try:
+            audio_segment = AudioSegment(
+                data=audio_data,
+                sample_width=2,
+                frame_rate=self.sample_rate,
+                channels=1
+            )
+            audio_segment = audio_segment.normalize()
+            samples = np.array(audio_segment.get_array_of_samples())
+            audio_np = samples.astype(np.float32) / 32768.0
+            return audio_np
+        except Exception as e:
+            raise ValueError(f"Normalize audio error: {e}")
+
+    def adjust_audio_length(self, audio_np: np.ndarray, target_length: int) -> np.ndarray:
+        current_length = len(audio_np)
+        if current_length < target_length:
+            padding_length = target_length - current_length
+            padded_audio_np = np.pad(audio_np, (0, padding_length), 'constant')
+            return padded_audio_np
+        else:
+            return audio_np[:target_length]
 
     def translate_text(self, text: str) -> str:
         """
@@ -172,26 +184,28 @@ class AudioProcessor:
 
         return result
 
-    def process_audio(self, timestamp: datetime, audio_data: bytes) -> Tuple[np.ndarray, Optional[Dict[str, str]]]:
+    def process_audio(self, timestamp: datetime, audio_data: bytes, audio_length: int) -> Tuple[np.ndarray, Optional[Dict[str, str]]]:
         """
         Process the audio data by recognizing speech, translating text, and synthesizing speech.
 
         Args:
             timestamp (datetime): The timestamp of the audio data.
             audio_data (bytes): The audio data to process.
+            audio_length (int): The audio length in milliseconds.
 
         Returns:
             Tuple[np.ndarray, Optional[Dict[str, str]]]: The final audio and log data.
         """
         audio_np = self.normalize_audio(audio_data)
+        adjusted_audio_np = self.adjust_audio_length(audio_np, audio_length)
 
-        recognized_result = self.recognize_speech(audio_np)
+        recognized_result = self.recognize_speech(adjusted_audio_np)
         recognized_segments = recognized_result['segments']
         recognized_language = recognized_result['language']
         synthesis_delay = (datetime.utcnow() - timestamp).total_seconds()
 
         if not recognized_segments or recognized_language == self.language_to:
-            return audio_np, {
+            return adjusted_audio_np, {
                 "timestamp": timestamp,
                 "original_text": recognized_result['text'],
                 "translated_text": recognized_result['text'],
