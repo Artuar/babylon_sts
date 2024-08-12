@@ -3,7 +3,6 @@ from setuptools import setup, find_packages
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-
 setup(
     name='babylon_sts',
     py_modules=["babylon_sts"],
@@ -12,6 +11,7 @@ setup(
                 'with advanced features for speech recognition, '
                 'text translation, and speech synthesis.',
     long_description=long_description,
+    long_description_content_type="text/markdown",
     author='Artur Rieznik',
     author_email='artuar1990@gmail.com',
     packages=find_packages(),
