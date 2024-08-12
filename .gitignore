@@ -2,3 +2,4 @@ venv/
 /.idea/
 /local_model_*/
 /babylon_sts.iml
+/build/

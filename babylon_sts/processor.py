@@ -46,10 +46,12 @@ lang_settings = {
     }
 }
 
+
 class RecognizeResult(TypedDict):
     text: str
     segments: List[Dict[str, str]]
     language: str
+
 
 def load_or_download_translation_model(language_to: str, language_from: str) -> Tuple[MarianTokenizer, MarianMTModel]:
     model_name = f"Helsinki-NLP/opus-mt-{lang_settings[language_from]['translation_key']}-{lang_settings[language_to]['translation_key']}"
@@ -67,11 +69,26 @@ def load_or_download_translation_model(language_to: str, language_from: str) -> 
     except Exception as e:
         raise ValueError(f"Error loading translation model for {language_from} to {language_to}: {e}")
 
-def load_silero_model(language: str) -> torch.nn.Module:
-    return torch.hub.load(repo_or_dir='snakers4/silero-models', model='silero_tts', language=language, speaker=lang_settings[language]['speaker'])
+
+def load_silero_model(language: str, speaker: str) -> torch.nn.Module:
+    return torch.hub.load(
+        repo_or_dir='snakers4/silero-models',
+        model='silero_tts',
+        language=language,
+        speaker=speaker
+    )
+
 
 class AudioProcessor:
-    def __init__(self, language_to: str, language_from: str, model_name: str, speaker: Optional[str] = None, sample_rate: int = 24000):
+    def __init__(
+            self,
+            language_to: str,
+            language_from: str,
+            model_name: str,
+            speaker: Optional[str] = None,
+            speaker_name: Optional[str] = None,
+            sample_rate: int = 24000
+    ):
         """
         Initialize the AudioProcessor with the specified language, Whisper model, and sample rate.
 
@@ -80,18 +97,20 @@ class AudioProcessor:
             language_from (str): The language code. Possible values: 'en', 'ua', 'ru', 'fr', 'de', 'es', 'hi'.
             model_name (str): The Whisper model to use. Possible values: 'tiny', 'base', 'small', 'medium', 'large'.
             sample_rate (int): The sample rate for audio processing.
-            speaker (Optional[str]): The name of speaker for speech synthesize.
+            speaker (Optional[str]): The key of Silero model speaker for speech synthesize.
+            speaker_name (Optional[str]): The name of Silero model speaker_name for speech synthesize.
         """
         self.language_to = language_to
         self.language_from = language_from
         self.sample_rate = sample_rate
-        self.speaker_name = speaker or lang_settings[language_to]['speaker_name']
+        self.speaker = speaker or lang_settings[language_to]['speaker']
+        self.speaker_name = speaker_name or lang_settings[language_to]['speaker_name']
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f'Using device: {self.device}')
 
         self.audio_model = whisper.load_model(model_name)
         self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from)
-        self.tts_model, self.example_text = load_silero_model(language_to)
+        self.tts_model, self.example_text = load_silero_model(language_to, self.speaker)
 
         self.audio_model.to(self.device)
         self.translation_model.to(self.device)

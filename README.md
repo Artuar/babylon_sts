@@ -11,10 +11,12 @@ Key Features:
 
 This library is designed to provide high-quality audio processing tools, offering everything you need to develop innovative solutions in the field of speech technology.
 
+![Flowchart of process_audio](./algorithm.jpg)
+
 ## Installation
 
 ```bash
-pip install git+https://github.com/Artuar/babylon_sts.git
+pip install babylon-sts
 ```
 
 ## Usage examples
@@ -78,6 +80,16 @@ pip install -r requirements.txt
 ```bash
 python -m unittest discover -s tests
 ```
+
+## Acknowledgments
+
+This library leverages several state-of-the-art models to provide advanced audio processing features:
+
+- **Whisper by OpenAI** for speech recognition: [Whisper GitHub Repository](https://github.com/openai/whisper)
+- **Helsinki-NLP's MarianMT** for text translation: [MarianMT GitHub Repository](https://github.com/Helsinki-NLP/OPUS-MT-train)
+- **Silero Models** for speech synthesis: [Silero Models GitHub Repository](https://github.com/snakers4/silero-models)
+
+These models are used in accordance with their respective licenses.
 
 ## License
 
