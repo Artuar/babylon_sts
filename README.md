@@ -11,7 +11,7 @@ Key Features:
 
 This library is designed to provide high-quality audio processing tools, offering everything you need to develop innovative solutions in the field of speech technology.
 
-![Flowchart of process_audio](./algorithm.jpg)
+![Flowchart of process_audio](https://raw.githubusercontent.com/Artuar/babylon_sts/master/algorithm.jpg)
 
 ## Installation
 
