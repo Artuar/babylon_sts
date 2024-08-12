@@ -1,12 +1,17 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
+
 setup(
     name='babylon_sts',
     py_modules=["babylon_sts"],
-    version='0.1.40',
+    version='0.1.41',
     description='A powerful library for audio processing '
                 'with advanced features for speech recognition, '
                 'text translation, and speech synthesis.',
+    long_description=long_description,
     author='Artur Rieznik',
     author_email='artuar1990@gmail.com',
     packages=find_packages(),
