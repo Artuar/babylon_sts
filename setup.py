@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name='babylon_sts',
     py_modules=["babylon_sts"],
-    version='0.1.43',
+    version='0.1.44',
     description='A powerful library for audio processing '
                 'with advanced features for speech recognition, '
                 'text translation, and speech synthesis.',

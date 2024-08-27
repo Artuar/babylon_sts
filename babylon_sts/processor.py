@@ -5,7 +5,7 @@ import whisper_timestamped as whisper
 import torch
 from pydub import AudioSegment
 from datetime import datetime
-from transformers import MarianMTModel, MarianTokenizer
+from transformers import MarianMTModel, MarianTokenizer, pipeline
 from typing import List, Dict, Tuple, Optional, TypedDict
 
 lang_settings = {
@@ -111,10 +111,12 @@ class AudioProcessor:
         self.audio_model = whisper.load_model(model_name)
         self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from)
         self.tts_model, self.example_text = load_silero_model(language_to, self.speaker)
+        self.language_detector = pipeline('audio-classification', model='Xenova/wav2vec2-large-xlsr-langid')
 
         self.audio_model.to(self.device)
         self.translation_model.to(self.device)
         self.tts_model.to(self.device)
+        self.language_detector.to(self.device)
 
     def normalize_audio(self, audio_data: bytes) -> Tuple[np.ndarray, float]:
         """
@@ -139,6 +141,10 @@ class AudioProcessor:
             return audio_np, len(audio_segment) / 1000
         except Exception as e:
             raise ValueError(f"Normalize audio error: {e}")
+
+    def detect_language(self, audio_np: np.ndarray):
+        audio_tensor = torch.tensor(audio_np, dtype=torch.float32)
+        return self.language_detector(audio_tensor)
 
     def adjust_audio_length(self, audio_np: np.ndarray, target_length: int) -> np.ndarray:
         current_length = len(audio_np)
@@ -214,6 +220,8 @@ class AudioProcessor:
         """
         audio_np, audio_length = self.normalize_audio(audio_data)
 
+        detected_language = self.detect_language(audio_np)
+
         recognized_result = self.recognize_speech(audio_np)
         recognized_segments = recognized_result['segments']
         recognized_language = recognized_result['language']
@@ -225,7 +233,8 @@ class AudioProcessor:
                 "original_text": recognized_result['text'],
                 "translated_text": recognized_result['text'],
                 "synthesis_delay": synthesis_delay,
-                "recognize_result": recognized_result
+                "recognize_result": recognized_result,
+                "detected_language": detected_language
             }
 
         translated_segments = []
@@ -264,7 +273,8 @@ class AudioProcessor:
             "original_text": original_text,
             "translated_text": translated_text,
             "synthesis_delay": synthesis_delay,
-            "recognize_result": recognized_result
+            "recognize_result": recognized_result,
+            "detected_language": detected_language
         }
 
         return final_audio, log_data
