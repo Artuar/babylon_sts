@@ -5,7 +5,7 @@ import whisper_timestamped as whisper
 import torch
 from pydub import AudioSegment
 from datetime import datetime
-from transformers import MarianMTModel, MarianTokenizer, pipeline
+from transformers import MarianMTModel, MarianTokenizer
 from typing import List, Dict, Tuple, Optional, TypedDict
 
 lang_settings = {
@@ -111,12 +111,10 @@ class AudioProcessor:
         self.audio_model = whisper.load_model(model_name)
         self.tokenizer, self.translation_model = load_or_download_translation_model(language_to, language_from)
         self.tts_model, self.example_text = load_silero_model(language_to, self.speaker)
-        self.language_detector = pipeline('audio-classification', model='Xenova/wav2vec2-large-xlsr-langid')
 
         self.audio_model.to(self.device)
         self.translation_model.to(self.device)
         self.tts_model.to(self.device)
-        self.language_detector.to(self.device)
 
     def normalize_audio(self, audio_data: bytes) -> Tuple[np.ndarray, float]:
         """
@@ -143,8 +141,12 @@ class AudioProcessor:
             raise ValueError(f"Normalize audio error: {e}")
 
     def detect_language(self, audio_np: np.ndarray):
-        audio_tensor = torch.tensor(audio_np, dtype=torch.float32)
-        return self.language_detector(audio_tensor)
+        # audio = whisper.pad_or_trim(audio_np)
+        # mel = whisper.log_mel_spectrogram(audio).to(self.device)
+        # _, probs = self.audio_model.detect_language(mel)
+        # return {max(probs, key=probs.get)}
+        return ""
+
 
     def adjust_audio_length(self, audio_np: np.ndarray, target_length: int) -> np.ndarray:
         current_length = len(audio_np)
